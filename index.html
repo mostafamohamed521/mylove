@@ -1346,37 +1346,62 @@ document.querySelectorAll('[data-tilt]').forEach(card=>{
 })();
 
 // ══════════════════════════════════════════
-// MUSIC PLAYER
+// MUSIC PLAYER (REAL AUDIO)
 // ══════════════════════════════════════════
-let isPlaying=false;
-let progVal=0, progTimer=null;
-const eqBars=document.querySelectorAll('.eq-bar');
+let audioElement = new Audio('E:/project/mylove/Albumaty.Com_tamr_aashwr_ksr_bayd.mp3'); // ⬅️ ضع رابط الأغنية هنا
+let isPlaying = false;
+let progTimer = null;
+const eqBars = document.querySelectorAll('.eq-bar');
 
-function animateEq(){
-  eqBars.forEach(b=>{ b.style.height=(Math.random()*20+4)+'px'; });
+// عند تحميل الأغنية، نعرف مدتها لشريط التقدم
+audioElement.addEventListener('loadedmetadata', () => {
+  // يمكن إضافة أي منطق تحضيري هنا
+});
+
+function animateEq() {
+  eqBars.forEach(b => { b.style.height = (Math.random() * 20 + 4) + 'px'; });
 }
 
-function togglePlay(){
-  isPlaying=!isPlaying;
-  document.getElementById('play-btn').innerHTML=isPlaying?'⏸':'▶';
-  document.getElementById('vinyl').classList.toggle('spinning',isPlaying);
-  document.getElementById('progress-dot').style.display=isPlaying?'block':'none';
-  if(isPlaying){
-    progTimer=setInterval(()=>{
-      progVal=Math.min(progVal+0.15,100);
-      document.getElementById('progress-fill').style.width=progVal+'%';
-      if(progVal>=100){ clearInterval(progTimer); isPlaying=false; document.getElementById('play-btn').innerHTML='▶'; }
-    },300);
-    setInterval(animateEq,200);
-  } else {
+function togglePlay() {
+  if (isPlaying) {
+    audioElement.pause();
     clearInterval(progTimer);
-    eqBars.forEach(b=>b.style.height='4px');
+  } else {
+    audioElement.play();
+    // تحديث شريط التقدم بناءً على الوقت الفعلي
+    progTimer = setInterval(() => {
+      if (audioElement.duration && !isNaN(audioElement.duration)) {
+        let percent = (audioElement.currentTime / audioElement.duration) * 100;
+        document.getElementById('progress-fill').style.width = percent + '%';
+        if (percent >= 99.9) {
+          // الأغنية انتهت
+          clearInterval(progTimer);
+          isPlaying = false;
+          document.getElementById('play-btn').innerHTML = '▶';
+          document.getElementById('vinyl').classList.remove('spinning');
+          eqBars.forEach(b => b.style.height = '4px');
+          audioElement.currentTime = 0;
+        }
+      }
+    }, 300);
+    // مؤثرات الـ equalizer
+    setInterval(animateEq, 200);
   }
+  isPlaying = !isPlaying;
+  document.getElementById('play-btn').innerHTML = isPlaying ? '⏸' : '▶';
+  document.getElementById('vinyl').classList.toggle('spinning', isPlaying);
+  document.getElementById('progress-dot').style.display = isPlaying ? 'block' : 'none';
 }
 
-function seekBack(){ progVal=Math.max(progVal-8,0); document.getElementById('progress-fill').style.width=progVal+'%'; }
-function seekForward(){ progVal=Math.min(progVal+8,100); document.getElementById('progress-fill').style.width=progVal+'%'; }
-function setVol(v){ /* visual only */ }
+function seekBack() {
+  audioElement.currentTime = Math.max(audioElement.currentTime - 5, 0);
+}
+function seekForward() {
+  audioElement.currentTime = Math.min(audioElement.currentTime + 5, audioElement.duration);
+}
+function setVol(v) {
+  audioElement.volume = v / 100;
+}
 
 // ══════════════════════════════════════════
 // MODAL
